@@ -14,9 +14,11 @@ class Player(ABC):
         self.power = power
         self.health = health
 
-    def move(self, enemy_position: tuple[int, int]):
+    def move(self, enemy_position: tuple[int, int], fear_enemy_position: tuple[int, int], fear_enemy_move_list: list):
         """
         Предостовляет возможность сделать ход игроку
+        :param fear_enemy_position: Позиция игрока с которого боятся игрок a и b
+        :param fear_enemy_move_list: Область игрока с
         :param enemy_position: Текущее местоположение противоположного игрока
         :return: None
         """
@@ -33,10 +35,18 @@ class Player(ABC):
         self.step_diagonally(move_list)
 
         j = 1
-        for item in move_list:
-            if tuple(item) == enemy_position:
+        flag = False
+        for move in move_list:
+            if tuple(move) == enemy_position or tuple(move) == fear_enemy_position:
                 continue
-            print('{0}) [{1};{2}]\n'.format(j, item[0], item[1]))
+            for fear_move in fear_enemy_move_list:
+                if fear_move == move:
+                    flag = True
+                    break
+            if flag:
+                flag = False
+                continue
+            print('{0}) [{1};{2}]\n'.format(j, move[0], move[1]))
             j += 1
 
         choice = int(input('Ваш выбор: '))
@@ -179,10 +189,16 @@ class PlayerA(Player):
     """
     Субкласс от Player. Игрок типа А
     """
-    def __init__(self, health=100, power=10):
-        super(PlayerA, self).__init__(power, health)
 
-    def attack(self, enemy_position):
+    def __init__(self, health=100, power=10):
+        if power == 0:
+            super(PlayerA, self).__init__(power=10)
+        elif health == 0:
+            super(PlayerA, self).__init__(power, health=100)
+        else:
+            super(PlayerA, self).__init__(power, health)
+
+    def attack(self, enemy_position: tuple[int, int]):
         move_list = []
         self.step_forward(move_list)
         self.step_left(move_list)
@@ -201,9 +217,14 @@ class PlayerB(Player):
         """
 
     def __init__(self, health=100, power=20):
-        super(PlayerB, self).__init__(power, health)
+        if power == 0:
+            super(PlayerB, self).__init__(power=20)
+        elif health == 0:
+            super(PlayerB, self).__init__(power, health=100)
+        else:
+            super(PlayerB, self).__init__(power, health)
 
-    def attack(self, enemy_position: tuple):
+    def attack(self, enemy_position: tuple[int, int]):
         move_list = []
         self.step_forward(move_list)
         self.step_left(move_list)
@@ -214,9 +235,56 @@ class PlayerB(Player):
                 return True
         return False
 
-# class PlayerC(Player):
-#
-#     def __init__(self,power, health=100):
-#         super(PlayerC, self).__init__(power,health)
 
+class PlayerC(Player):
 
+    def __init__(self, power=20, health=100):
+        if power == 0:
+            super(PlayerC, self).__init__(power=10)
+        elif health == 0:
+            super(PlayerC, self).__init__(power, health=100)
+        else:
+            super(PlayerC, self).__init__(power, health)
+
+    def attack(self, enemy_position):
+        move_list = []
+        self.step_forward(move_list)
+        self.step_left(move_list)
+        self.step_right(move_list)
+        self.step_back(move_list)
+        self.step_diagonally(move_list)
+        for item in move_list:
+            if tuple(item) == enemy_position:
+                return True
+        return False
+
+    def get_fear_move_list(self):
+        move_list = []
+
+        self.step_forward(move_list)
+        self.step_left(move_list)
+        self.step_right(move_list)
+        self.step_back(move_list)
+        self.step_diagonally(move_list)
+
+        return move_list
+
+    def fear_move(self, enemy_position_one, enemy_position_two):
+        move_list = []
+
+        self.step_forward(move_list)
+        self.step_left(move_list)
+        self.step_right(move_list)
+        self.step_back(move_list)
+        self.step_diagonally(move_list)
+
+        j = 1
+        for move in move_list:
+            if tuple(move) == enemy_position_one or tuple(move) == enemy_position_two:
+                continue
+            print('{0}) [{1};{2}]\n'.format(j, move[0], move[1]))
+            j += 1
+
+        choice = int(input('Ваш выбор: '))
+
+        self.__set_player_position(tuple(move_list[choice - 1]))
